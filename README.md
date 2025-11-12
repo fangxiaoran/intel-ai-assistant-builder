@@ -100,7 +100,7 @@ To get started with the UI source code, refer to the [UI development guide](src/
   [API Documentation - v1.2.0](https://intel.github.io/intel-ai-assistant-builder/v1.2.0)
 
 > [!NOTE]
-> The v2.0.0 API remains compatible with v2.1 and v2.2. We maintain API stability across minor releases to minimize disruption to your applications.
+> The v2.0.0 API remains compatible with v2.1.0 and v2.2.0. We maintain API stability across minor releases to minimize disruption to your applications.
 
 <br>
 
