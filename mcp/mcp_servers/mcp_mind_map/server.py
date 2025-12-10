@@ -6,6 +6,9 @@ import asyncio
 import time
 import socket
 import subprocess
+import tempfile
+import shutil
+import atexit
 from pathlib import Path
 from mcp.server.fastmcp import FastMCP
 
@@ -62,26 +65,82 @@ _server_thread = None
 _server_loop = None
 _server_running = False
 _server_start_time = None
+_markmap_exe_path = None
+_temp_dir = None
 
 #### Server Tools ####
+
+def get_bundled_markmap_path():
+    """Extract bundled markmap executable to temp directory if running as PyInstaller exe."""
+    global _markmap_exe_path, _temp_dir
+    
+    if _markmap_exe_path and os.path.exists(_markmap_exe_path):
+        return _markmap_exe_path
+    
+    # Check if running as PyInstaller bundle
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        # Running as exe - extract bundled markmap
+        bundled_path = os.path.join(sys._MEIPASS, 'markmap-standalone.exe')
+        if os.path.exists(bundled_path):
+            # Create temp directory for extracted executable
+            _temp_dir = tempfile.mkdtemp(prefix='mindmap_')
+            _markmap_exe_path = os.path.join(_temp_dir, 'markmap-standalone.exe')
+            shutil.copy2(bundled_path, _markmap_exe_path)
+            
+            # Register cleanup on exit
+            def cleanup():
+                global _temp_dir
+                if _temp_dir and os.path.exists(_temp_dir):
+                    try:
+                        shutil.rmtree(_temp_dir)
+                    except:
+                        pass
+            atexit.register(cleanup)
+            
+            return _markmap_exe_path
+        else:
+            raise RuntimeError(
+                "Bundled markmap executable not found. "
+                "Please rebuild with build-markmap.bat first."
+            )
+    else:
+        # Running as script - check for local standalone exe
+        local_exe = os.path.join(SCRIPT_DIR, 'markmap-standalone.exe')
+        if os.path.exists(local_exe):
+            _markmap_exe_path = local_exe
+            return _markmap_exe_path
+        
+        # Fall back to system markmap
+        return 'markmap'
 
 # check if the required dependencies are installed
 def is_markmap_installed():
     try:
+        markmap_path = get_bundled_markmap_path()
         result = subprocess.run(
-            ["markmap", "--version"],
+            [markmap_path, "--version"],
             capture_output=True,
             text=True,
-            shell=True
+            shell=True if markmap_path == 'markmap' else False
         )
         return result.returncode == 0
-    except Exception:
-        return False
+    except Exception as e:
+        # If bundled version fails, try system markmap
+        try:
+            result = subprocess.run(
+                ["markmap", "--version"],
+                capture_output=True,
+                text=True,
+                shell=True
+            )
+            return result.returncode == 0
+        except:
+            return False
 
 if not is_markmap_installed():
     raise RuntimeError(
-        "markmap-cli is not installed or not found in PATH. "
-        "Please install it with 'npm install -g markmap-cli'."
+        "markmap is not available. "
+        "Either rebuild with bundled markmap or install markmap-cli: 'npm install -g markmap-cli'."
     )
 
 async def convert_markdown_file_to_mindmap(
@@ -104,19 +163,19 @@ async def convert_markdown_file_to_mindmap(
         if not markdown_file.suffix == '.md':
             raise RuntimeError(f"File is not a Markdown file: {markdown_file}")
         
+        # Get the markmap executable (bundled or system)
+        markmap_path = get_bundled_markmap_path()
+        
+        # Run markmap directly
+        output_file: Path = Path(str(markdown_file).replace(".md", ".html"))
         process = subprocess.run(
-            [
-                "powershell.exe",
-                "-Command",
-                f'markmap.ps1 "{str(markdown_file)}" --no-open'
-            ],
+            [markmap_path, str(markdown_file), "--no-open"],
             capture_output=True,
             text=True
         )
-        output_file: Path = Path(str(markdown_file).replace(".md", ".html"))
         
         if process.returncode != 0:
-            raise RuntimeError(f"markmap-cli exited with code {process.returncode}: {process.stderr}")
+            raise RuntimeError(f"markmap exited with code {process.returncode}: {process.stderr}")
         
         # by default, output file is at the same folder as input file
         if not output_file.exists():

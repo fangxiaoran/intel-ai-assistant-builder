@@ -1,0 +1,13 @@
+<Configuration>
+  <VGpu>Enable</VGpu>
+  <Networking>Enable</Networking>
+  <MappedFolders>
+    <MappedFolder>
+      <HostFolder>D:\Workspace\intel-ai-assistant-builder-xiaoranf\mcp\mcp_servers\mcp_mind_map\dist</HostFolder>
+      <ReadOnly>true</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+  <LogonCommand>
+    <Command>powershell.exe -ExecutionPolicy Bypass -Command "cd C:\Users\WDAGUtilityAccount\Desktop\dist; Write-Host 'Testing in COMPLETELY CLEAN Windows Sandbox...' -ForegroundColor Cyan; .\mind_map-mcp-server.exe version --json; if ($LASTEXITCODE -eq 0) { Write-Host 'SUCCESS! Exe works in clean environment!' -ForegroundColor Green } else { Write-Host 'FAILED!' -ForegroundColor Red }; pause"</Command>
+  </LogonCommand>
+</Configuration>

@@ -5,7 +5,9 @@ block_cipher = None
 a = Analysis(
     ['server.py'],
     pathex=[],
-    binaries=[],
+    binaries=[
+        ('markmap-standalone.exe', '.'),  # Bundle the standalone markmap executable
+    ],
     datas=[],
     hiddenimports=[
         'mcp.server.fastmcp',

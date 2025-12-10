@@ -17,41 +17,26 @@ cross-process control, and production-ready deployment capabilities.
 
 ## Prerequisites
 
-Before using the mind_map MCP server, you need to install the required dependencies:
+### For Using the Standalone Executable (Production)
 
-### 1. Install Node.js
-Download and install the Windows installer (.msi) from: https://nodejs.org/en/download/current
+**NONE!** The standalone executable (`dist/mind_map-mcp-server.exe`) is completely self-contained:
+- ✅ No Python installation required
+- ✅ No Node.js installation required  
+- ✅ No npm packages required
+- ✅ No execution policy changes required
+- ✅ Just download and run!
 
-### 2. Install markmap-cli
-Open Command Prompt (cmd) and run:
-```cmd
-npm install -g markmap-cli
-```
+### For Development (Building from Source)
 
-### 3. Add npm Package Path to System PATH
-After installing markmap-cli globally, you need to add the npm package path to your system PATH:
+If you want to build the executable yourself or develop the server:
 
-1. **Find the npm package directory:**
-   ```cmd
-   npm list -g markmap-cli
-   ```
-   This will show the markmap-cli package path (e.g., `C:\Users\YourName\AppData\Roaming\npm`)
+**1. Install Python 3.8+**
+   - Download from https://www.python.org/downloads/
 
-2. **Add to System PATH:**
-   - Open System Properties (Win + X → System → Advanced system settings)
-   - Click "Environment Variables"
-   - Under "System Variables", find and select "Path", then click "Edit"
-   - Click "New" and add the npm directory path from step 1 (e.g., `C:\Users\YourName\AppData\Roaming\npm`)
-   - Click "OK" to save all changes
-
-3. **Restart your system or log out/in** to ensure the PATH changes take effect
-
-### 4. Configure PowerShell Execution Policy (Required for Windows)
-Open PowerShell as Administrator and run:
-```powershell
-Set-ExecutionPolicy RemoteSigned -Scope LocalMachine
-```
-This is required because the mindmap creation needs to access local file paths.
+**2. Install Node.js** (for building only, not for running the exe)
+   - Download from https://nodejs.org/en/download/current
+   - Required to build the standalone markmap executable during compilation
+   - End users do NOT need Node.js installed
 
 ## Quick Start
 
@@ -73,17 +58,31 @@ python server.py status --json
 python server.py stop
 ```
 
-### 3. Build for Production
-```powershell
-# Build standalone executable
-.\build.ps1
+### 3. Build for Production (Developers Only)
 
-# The executable will be created in dist/mind_map-mcp-server.exe
+Build a completely standalone executable that bundles Python, Node.js, and all dependencies:
+
+```powershell
+# Run the build script (requires Node.js + Python on build machine)
+.\build.bat
+
+# The standalone executable will be created at: dist/mind_map-mcp-server.exe
+# Size: ~44 MB (includes everything)
 ```
 
-### 4. Production Usage
+**What gets bundled:**
+- Python 3.14 runtime
+- Node.js runtime (embedded)
+- markmap-cli library
+- All Python dependencies (mcp, fastapi, uvicorn, etc.)
+- All Node.js dependencies (D3.js, markmap libraries, etc.)
+
+### 4. Production Usage (End Users)
+
+Simply download and run the standalone executable - no installation needed:
+
 ```powershell
-# Run the built executable (using stdio protocol)
+# Run the executable (using stdio protocol)
 .\dist\mind_map-mcp-server.exe start
 
 # Check status
@@ -92,6 +91,8 @@ python server.py stop
 # Stop server
 .\dist\mind_map-mcp-server.exe stop
 ```
+
+**No prerequisites required!** The exe works on any Windows 10/11 machine out of the box.
 
 ## Development
 
@@ -171,21 +172,36 @@ Create a standalone executable for distribution:
 ```
 
 Build output:
-- `dist/mind_map-mcp-server.exe`: Standalone executable
-- `build/`: Build artifacts and dependencies
-- All dependencies bundled via PyInstaller
+- `dist/mind_map-mcp-server.exe`: **Single, standalone executable (~44 MB)**
+- `build/`: Build artifacts (can be deleted after build)
+- `markmap-standalone.exe`: Intermediate Node.js executable (embedded in final exe)
+
+**What's bundled inside the exe:**
+- Python runtime + all Python packages
+- Node.js runtime + markmap-cli
+- Zero external dependencies
 
 ### Distribution
 
-The built executable can be distributed without Python dependencies:
+The executable is completely self-contained and can be distributed as a single file:
 
 ```powershell
-# Copy executable to target system
+# Copy just the ONE executable to any Windows machine
 Copy-Item .\dist\mind_map-mcp-server.exe C:\MyServers\
 
-# Run on target system
+# Run on target machine (no installation needed!)
+C:\MyServers\mind_map-mcp-server.exe version --json
 C:\MyServers\mind_map-mcp-server.exe start
 ```
+
+**Target machines need:**
+- ❌ No Python
+- ❌ No Node.js
+- ❌ No npm packages  
+- ❌ No environment configuration
+- ✅ Just Windows 10/11
+
+The exe automatically extracts bundled components to a temporary directory on first use.
 
 ### Process Management
 
@@ -285,9 +301,15 @@ mind_map/
 
 ## Requirements
 
-- **Development**: Python 3.8+, PowerShell 5.0+
-- **Production**: Windows/Linux (standalone executable)
-- **Dependencies**: See `requirements.txt`
+### For End Users (Running the Executable)
+- **Operating System**: Windows 10 or Windows 11
+- **Dependencies**: None!
+
+### For Developers (Building from Source)
+- **Python**: 3.8 or higher
+- **Node.js**: 18 or higher (for building markmap bundle)
+- **PowerShell**: 5.0+ (Windows)
+- **Build Dependencies**: See `requirements.txt` and `package.json`
 
 ## Generated Information
 
