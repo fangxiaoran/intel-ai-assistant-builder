@@ -166,16 +166,27 @@ async def convert_markdown_file_to_mindmap(
         # Get the markmap executable (bundled or system)
         markmap_path = get_bundled_markmap_path()
         
-        # Run markmap directly
+        # Run markmap directly with timeout
         output_file: Path = Path(str(markdown_file).replace(".md", ".html"))
-        process = subprocess.run(
-            [markmap_path, str(markdown_file), "--no-open"],
-            capture_output=True,
-            text=True
-        )
+        try:
+            process = subprocess.run(
+                [markmap_path, str(markdown_file), "--no-open"],
+                capture_output=True,
+                text=True,
+                cwd=str(markdown_file.parent),
+                timeout=30,  # 30 second timeout
+                stdin=subprocess.DEVNULL  # Close stdin to prevent hanging
+            )
+        except subprocess.TimeoutExpired:
+            raise RuntimeError(f"markmap execution timed out after 30 seconds")
         
         if process.returncode != 0:
-            raise RuntimeError(f"markmap exited with code {process.returncode}: {process.stderr}")
+            error_msg = f"markmap exited with code {process.returncode}"
+            if process.stderr:
+                error_msg += f": {process.stderr}"
+            if process.stdout:
+                error_msg += f"\nOutput: {process.stdout}"
+            raise RuntimeError(error_msg)
         
         # by default, output file is at the same folder as input file
         if not output_file.exists():
@@ -526,10 +537,13 @@ Examples:
   python server.py status --json
   python server.py ping
   python server.py version
+  
+  # For MCP client usage (no arguments - auto-starts in stdio mode):
+  python server.py
         """
     )
     
-    parser.add_argument("command", choices=["start", "stop", "status", "ping", "version", "help"])
+    parser.add_argument("command", nargs='?', default=None, choices=["start", "stop", "status", "ping", "version", "help"])
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--timeout", type=int, default=30)
     parser.add_argument("--port", type=int)
@@ -537,6 +551,15 @@ Examples:
     
     try:
         args = parser.parse_args()
+        
+        # If no command provided, assume MCP client mode - start directly in stdio
+        if args.command is None:
+            # MCP client mode - initialize and run directly
+            mcp = FastMCP("mind_map")
+            register_tools(verbose=False)
+            # FastMCP.run() will handle stdio communication
+            mcp.run()
+            sys.exit(0)
         
         current_port = mind_map_PORT
         current_protocol = mind_map_PROTOCOL
@@ -560,25 +583,22 @@ Examples:
         register_tools(verbose=not args.json)      
             
         if args.command == "start":
+            # For stdio protocol, run directly on main thread (not in background thread)
+            if current_protocol == 'stdio':
+                # Run FastMCP stdio server directly - this will block until terminated
+                mcp.run()
+                sys.exit(0)
+            
+            # For http/sse protocols, start server in background thread
             if start_server(current_port, current_protocol):
-                if current_protocol == 'stdio':
-                    response, exit_code = create_response(
-                        True, 
-                        format_message('server_started'),
-                        {},
-                        exit_code=0 if _server_running else 1,
-                        current_port=current_port,
-                        current_protocol=current_protocol
-                    )
-                else:
-                    response, exit_code = create_response(
-                        True, 
-                        format_message('server_started', port=current_port),
-                        {"port": current_port},
-                        exit_code=0 if _server_running else 1,
-                        current_port=current_port,
-                        current_protocol=current_protocol
-                    )
+                response, exit_code = create_response(
+                    True, 
+                    format_message('server_started', port=current_port),
+                    {"port": current_port},
+                    exit_code=0 if _server_running else 1,
+                    current_port=current_port,
+                    current_protocol=current_protocol
+                )
                 
                 if args.json:
                     print(json.dumps(response), flush=True)

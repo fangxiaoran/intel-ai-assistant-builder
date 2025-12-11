@@ -15,6 +15,23 @@ REM Install dependencies
 echo Installing Node.js dependencies...
 call npm install
 
+REM Install pkg globally if not already installed
+echo Checking for pkg...
+call npm list -g pkg >nul 2>&1
+if errorlevel 1 (
+    echo Installing pkg globally...
+    call npm install -g pkg
+)
+
+REM Bundle markmap-cli using ncc
+echo Bundling markmap-cli with ncc...
+call npm run bundle
+
+if errorlevel 1 (
+    echo Error: Failed to bundle markmap-cli
+    exit /b 1
+)
+
 REM Build standalone executable
 echo Building markmap-standalone.exe...
 call npm run build

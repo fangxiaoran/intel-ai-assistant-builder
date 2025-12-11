@@ -24,9 +24,12 @@ build-markmap.bat
 ```
 
 This will:
-- Install markmap-cli and pkg via npm
-- Bundle markmap-cli + Node.js runtime into `markmap-standalone.exe` (~60-80MB)
+- Install markmap-cli and esbuild via npm
+- Bundle markmap-cli dependencies using esbuild with ESM→CommonJS conversion
+- Package bundled code + Node.js runtime using pkg into `markmap-standalone.exe` (~60-80MB)
 - Test the executable
+
+**Technical Details**: The build uses a custom bundler script (`create-bundle.js`) that properly handles markmap-cli's ESM modules by converting them to CommonJS with `import.meta.url` shims. This is necessary because markmap-cli is ESM-only and pkg cannot execute ESM modules directly.
 
 **Output**: `markmap-standalone.exe`
 

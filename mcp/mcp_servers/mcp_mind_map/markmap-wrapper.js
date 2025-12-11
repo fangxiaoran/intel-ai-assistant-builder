@@ -21,17 +21,22 @@ if (args.includes('--version')) {
   }
 }
 
-// Import and run markmap-cli directly
+// Directly require and execute the bundled markmap
+// The bundled version is CommonJS, so we can require it
 try {
-  // This works when bundled with pkg
-  const { run } = require('markmap-cli');
+  // Set up argv for the bundled CLI
+  process.argv = [process.argv[0], 'markmap', ...args];
   
-  // Run markmap with provided arguments
-  run(args).catch(error => {
-    console.error('Error running markmap:', error.message);
+  // Load the bundled CLI and call main() function
+  const { main } = require('./bundled/index.js');
+  
+  // Execute the main function (it returns a Promise)
+  main().catch(err => {
+    console.error('Markmap execution error:', err);
     process.exit(1);
   });
+  
 } catch (error) {
-  console.error('Failed to load markmap-cli:', error.message);
+  console.error('Failed to execute markmap:', error.message);
   process.exit(1);
 }
