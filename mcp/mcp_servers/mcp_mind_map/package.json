@@ -15,7 +15,7 @@
   },
   "scripts": {
     "bundle": "node create-bundle.js",
-    "build": "npm run bundle && pkg . --targets node18-win-x64 --output markmap-standalone.exe"
+    "build": "npm run bundle && pkg . --targets node18-win-x64 --output markmap-standalone.exe --compress GZip"
   },
   "pkg": {
     "assets": [
@@ -24,6 +24,7 @@
     "targets": [
       "node18-win-x64"
     ],
-    "outputPath": "dist"
+    "outputPath": "dist",
+    "scripts": "bundled/**/*.js"
   }
 }

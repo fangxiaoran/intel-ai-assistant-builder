@@ -30,6 +30,7 @@ a = Analysis(
         'requests',
         'datetime',
         'psutil',
+        'tzdata',
         # Add project-specific imports as needed
         # 'python_dotenv',     # For environment variables
     ],
