@@ -25,10 +25,7 @@ esbuild.build({
   target: 'node18',
   format: 'cjs',
   outfile: path.join(bundleDir, 'index.js'),
-  external: [
-    // Keep these as external to reduce bundle size
-    'fsevents'
-  ],
+  // Bundle everything - no external packages
   banner: {
     js: `
 // Shim for import.meta.url in CommonJS

@@ -11,19 +11,34 @@ const args = process.argv.slice(2);
 
 // If --version flag, show version
 if (args.includes('--version')) {
-  try {
-    const pkg = require('markmap-cli/package.json');
-    console.log(pkg.version || '1.0.0');
-    process.exit(0);
-  } catch (e) {
-    console.log('1.0.0');
-    process.exit(0);
-  }
+  // Use hardcoded version to avoid requiring markmap-cli package
+  console.log('1.0.0');
+  process.exit(0);
 }
 
 // Directly require and execute the bundled markmap
 // The bundled version is CommonJS, so we can require it
 try {
+  // Stub read-package-up to return a dummy package.json
+  // This prevents update-notifier from failing when package.json is not found
+  const Module = require('module');
+  const originalRequire = Module.prototype.require;
+  
+  Module.prototype.require = function(id) {
+    if (id === 'read-package-up' || id.endsWith('/read-package-up')) {
+      return {
+        readPackageUpSync: () => ({
+          packageJson: {
+            name: 'markmap-standalone',
+            version: '1.0.0'
+          },
+          path: path.join(__dirname, 'package.json')
+        })
+      };
+    }
+    return originalRequire.apply(this, arguments);
+  };
+  
   // Set up argv for the bundled CLI
   process.argv = [process.argv[0], 'markmap', ...args];
   

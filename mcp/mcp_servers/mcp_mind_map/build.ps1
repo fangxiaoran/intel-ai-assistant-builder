@@ -52,10 +52,6 @@ Write-Host "Installing dependencies..." -ForegroundColor Yellow
 & "$VenvDir\Scripts\python.exe" -m pip install --upgrade pip
 & "$VenvDir\Scripts\pip.exe" install -r requirements.txt
 
-# Install tzdata package
-Write-Host "Installing tzdata..." -ForegroundColor Yellow
-& "$VenvDir\Scripts\pip.exe" install tzdata
-
 # Build markmap standalone executable first
 Write-Host "Building markmap standalone executable..." -ForegroundColor Yellow
 npm install
@@ -64,6 +60,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+Write-Host "Running npm build..." -ForegroundColor Yellow
 npm run build
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error: markmap build failed" -ForegroundColor Red

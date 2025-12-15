@@ -15,16 +15,6 @@
   },
   "scripts": {
     "bundle": "node create-bundle.js",
-    "build": "npm run bundle && pkg . --targets node18-win-x64 --output markmap-standalone.exe --compress GZip"
-  },
-  "pkg": {
-    "assets": [
-      "bundled/**/*"
-    ],
-    "targets": [
-      "node18-win-x64"
-    ],
-    "outputPath": "dist",
-    "scripts": "bundled/**/*.js"
+    "build": "npm run bundle && pkg markmap-wrapper.js --targets node18-win-x64 --output markmap-standalone.exe --compress GZip --config pkg-package.json"
   }
 }
